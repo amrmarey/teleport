@@ -1,0 +1,48 @@
+#version: "3.8"
+
+volumes:
+  teleport_data:  # Named volume for Teleport data
+
+networks:
+  teleport_network:
+    driver: bridge
+
+services:
+  teleport:
+    # Build the pinned Teleport version from the Dockerfile
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: teleport-community:13.3.1  # Tag the image accordingly
+    container_name: teleport
+    hostname: teleport
+
+    networks:
+      - teleport_network
+
+    # Persist Teleport's data in a named volume
+    # Also mount local certs and config
+    volumes:
+      - teleport_data:/var/lib/teleport
+      - ./teleport.yaml:/etc/teleport.yaml:ro
+      - ./certs:/etc/teleport/certs:ro
+
+    ports:
+      # Map Teleport's HTTPS to host port 443
+      - "443:443"
+      # Other Teleport ports if needed:
+      - "3022:3022"
+      - "3023:3023"
+      - "3024:3024"
+      - "3025:3025"
+      # - "3080:3080" # If also serving HTTP (not recommended in production)
+
+    # Restart policy for production resiliency
+    restart: unless-stopped
+
+    # Healthcheck that pings Teleport's HTTPS endpoint
+    healthcheck:
+      test: ["CMD", "curl", "-k", "-f", "https://127.0.0.1:443/webapi/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
