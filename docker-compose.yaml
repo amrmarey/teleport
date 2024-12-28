@@ -29,7 +29,7 @@ services:
 
     ports:
       # Map Teleport's HTTPS to host port 443
-      - "443:443"
+      - "30443:443"
       # Other Teleport ports if needed:
       - "3022:3022"
       - "3023:3023"
